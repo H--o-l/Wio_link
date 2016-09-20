@@ -23,12 +23,12 @@ IS_ACCESS_KEY = file("initial_state.token", "r").readline()[:-1] # "Initial_Stat
 # Time between sensor readings
 SLEEP_TIME_SEC = (5 * 60)
 
-def get_reading(sensor,signal):
-	# Function to fetch the JSON from a particular Wio API URL
-	api_reading_url = "https://us.wio.seeed.io/v1/node/" + sensor + "/" + signal + "?access_token=" + WIO_ACCESS_TOKEN
+
+def send_sleep(sleep_time_sec):
+	api_reading_url = "https://us.wio.seeed.io/v1/node/pm/sleep/" + str(sleep_time_sec) + "?access_token=" + WIO_ACCESS_TOKEN
 	print api_reading_url
 	try :
-		f = urllib2.urlopen(api_reading_url)
+		f = urllib2.urlopen(api_reading_url, "")
 	except urllib2.HTTPError as err:
 		streamer.log("Error ","HTTP exception")
 		print "Http Error: " + str(err)
@@ -37,11 +37,27 @@ def get_reading(sensor,signal):
 	f.close()
 	return json.loads(json_reading)
 
-def send_sleep(sleep_time_sec):
-	api_reading_url = "https://us.wio.seeed.io/v1/node/pm/sleep/" + str(sleep_time_sec) + "?access_token=" + WIO_ACCESS_TOKEN
+def set_asleep(sleep_time_sec):
+	reader = send_sleep(sleep_time_sec)
+	if (reader != False):
+		try:
+			value = reader['result']
+			streamer.log(":fire: Sleeping and init",'0')
+			print "Wio set asleep for " + str(sleep_time_sec) + " sec: " + value
+			return True
+		except KeyError:
+			print "Error in setting Wio asleep: " + reader['error']
+			streamer.log("Error ",str(reader['error']))
+			return False
+	else:
+		return False
+
+def get_reading(sensor,signal):
+	# Function to fetch the JSON from a particular Wio API URL
+	api_reading_url = "https://us.wio.seeed.io/v1/node/" + sensor + "/" + signal + "?access_token=" + WIO_ACCESS_TOKEN
 	print api_reading_url
 	try :
-		f = urllib2.urlopen(api_reading_url, "")
+		f = urllib2.urlopen(api_reading_url)
 	except urllib2.HTTPError as err:
 		streamer.log("Error ","HTTP exception")
 		print "Http Error: " + str(err)
@@ -66,31 +82,22 @@ def read_and_send(sensor_name, sensor_type, sensor_return, display_name):
 	else:
 		return False
 
-def set_asleep(sleep_time_sec):
-	reader = send_sleep(sleep_time_sec)
-	if (reader != False):
-		try:
-			value = reader['result']
-			streamer.log(":fire: Sleeping and init",'0')
-			print "Wio set asleep for " + str(sleep_time_sec) + " sec: " + value
-			return True
-		except KeyError:
-			print "Error in setting Wio asleep: " + reader['error']
-			streamer.log("Error ",str(reader['error']))
-			return False
-	else:
-		return False
 		
 def try_wakeup():
+	# Function to fetch the JSON from a particular Wio API URL
+	api_reading_url = "https://us.wio.seeed.io/v1/node/GroveAirqualityA0/quality?access_token=" + WIO_ACCESS_TOKEN
 	while True:
 		print "Try wio up"
-		if(read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')):
-			streamer.log(":fire: Sleeping and init",'1')
-			break
-		else:
-			print "Wio still sleeping"
+		print api_reading_url
+		try :
+			f = urllib2.urlopen(api_reading_url)
+		except urllib2.HTTPError as err:
+			streamer.log("Wio still sleeping","true")
+			print "Wio still sleeping: " + str(err)
 			time.sleep(10)
-
+			continue
+		f.close()
+		break
 
 if __name__ == '__main__':
 	# Initialize the Intial State streamer
@@ -103,13 +110,14 @@ if __name__ == '__main__':
 			try_wakeup()
 			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
 			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
+			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
 			read_and_send('GroveDigitalLightI2C0', 'lux', 'lux', 'Light')
 			read_and_send('GroveDigitalLightI2C0', 'lux', 'lux', 'Light')
 			read_and_send('GroveTempHumD0', 'temperature', 'celsius_degree', 'Temperatue')
 			read_and_send('GroveTempHumD0', 'humidity', 'humidity', 'Humidity')
 			read_and_send('GroveTempHumD0', 'humidity', 'humidity', 'Humidity')
 			set_asleep(SLEEP_TIME_SEC)
-			time.sleep(SLEEP_TIME_SEC + 20)
+			time.sleep(SLEEP_TIME_SEC + 10)
 			
 		except KeyboardInterrupt:
 			break
