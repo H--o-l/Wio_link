@@ -27,7 +27,12 @@ def get_reading(sensor,signal):
 	# Function to fetch the JSON from a particular Wio API URL
 	api_reading_url = "https://us.wio.seeed.io/v1/node/" + sensor + "/" + signal + "?access_token=" + WIO_ACCESS_TOKEN
 	print api_reading_url
-	f = urllib2.urlopen(api_reading_url)
+	try :
+		f = urllib2.urlopen(api_reading_url)
+	except urllib2.HTTPError as err:
+		streamer.log("Error ","HTTP exception")
+		print "Http Error: " + str(err)
+		return False
 	json_reading = f.read()
 	f.close()
 	return json.loads(json_reading)
@@ -35,7 +40,12 @@ def get_reading(sensor,signal):
 def send_sleep(sleep_time_sec):
 	api_reading_url = "https://us.wio.seeed.io/v1/node/pm/sleep/" + str(sleep_time_sec) + "?access_token=" + WIO_ACCESS_TOKEN
 	print api_reading_url
-	f = urllib2.urlopen(api_reading_url, "")
+	try :
+		f = urllib2.urlopen(api_reading_url, "")
+	except urllib2.HTTPError as err:
+		streamer.log("Error ","HTTP exception")
+		print "Http Error: " + str(err)
+		return False
 	json_reading = f.read()
 	f.close()
 	return json.loads(json_reading)
@@ -48,9 +58,13 @@ def read_and_send(sensor_name, sensor_type, sensor_return, display_name):
 			value = reader[sensor_return]
 			print display_name + ": " + str(value)
 			streamer.log(":fire: " + display_name,str(value))
+			return True
 		except KeyError:
 			print "Error reading " + display_name + ": " + str(reader['error'])
 			streamer.log("Error ",str(reader['error']))
+			return False
+	else:
+		return False
 
 def set_asleep(sleep_time_sec):
 	reader = send_sleep(sleep_time_sec)
@@ -59,21 +73,23 @@ def set_asleep(sleep_time_sec):
 			value = reader['result']
 			streamer.log(":fire: Sleeping and init",'0')
 			print "Wio set asleep for " + str(sleep_time_sec) + " sec: " + value
+			return True
 		except KeyError:
 			print "Error in setting Wio asleep: " + reader['error']
 			streamer.log("Error ",str(reader['error']))
-
+			return False
+	else:
+		return False
+		
 def try_wakeup():
 	while True:
-		try:
-			print "Try wio up"
-			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')	
-		except urllib2.HTTPError:
+		print "Try wio up"
+		if(read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')):
+			streamer.log(":fire: Sleeping and init",'1')
+			break
+		else:
 			print "Wio still sleeping"
 			time.sleep(10)
-			continue
-		streamer.log(":fire: Sleeping and init",'1')
-		break
 
 
 if __name__ == '__main__':
