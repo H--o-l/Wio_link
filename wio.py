@@ -21,7 +21,7 @@ BUCKET_KEY = file("bucket.token", "r").readline()[:-1] # "wiolink"
 IS_ACCESS_KEY = file("initial_state.token", "r").readline()[:-1] # "Initial_State_Access_Key_Here"
 
 # Time between sensor readings
-SLEEP_TIME_SEC = (5 * 60)
+SLEEP_TIME_SEC = (2 * 60)
 
 
 def send_sleep(sleep_time_sec):
@@ -42,7 +42,6 @@ def set_asleep(sleep_time_sec):
 	if (reader != False):
 		try:
 			value = reader['result']
-			streamer.log(":fire: Sleeping and init",'0')
 			print "Wio set asleep for " + str(sleep_time_sec) + " sec: " + value
 			return True
 		except KeyError:
@@ -107,8 +106,8 @@ if __name__ == '__main__':
 	# Loop through reading and streaming each signal's value
 	while True:
 		try: 
-			try_wakeup()
-			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
+			# try_wakeup()
+			streamer.log(":fire: Sleeping and init",'1')
 			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
 			read_and_send('GroveAirqualityA0', 'quality', 'quality', 'Air quality')
 			read_and_send('GroveDigitalLightI2C0', 'lux', 'lux', 'Light')
@@ -116,7 +115,8 @@ if __name__ == '__main__':
 			read_and_send('GroveTempHumD0', 'temperature', 'celsius_degree', 'Temperatue')
 			read_and_send('GroveTempHumD0', 'humidity', 'humidity', 'Humidity')
 			read_and_send('GroveTempHumD0', 'humidity', 'humidity', 'Humidity')
-			set_asleep(SLEEP_TIME_SEC)
+			streamer.log(":fire: Sleeping and init",'0')
+			# set_asleep(SLEEP_TIME_SEC)
 			time.sleep(SLEEP_TIME_SEC + 10)
 			
 		except KeyboardInterrupt:
