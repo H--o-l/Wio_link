@@ -1,10 +1,2 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Token files
-*.token
-
-# log files
-log.txt
+.pio
+src/secrets.h
